@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "tsnd --transpile-only -r tsconfig-paths/register src/index.ts"
+    "dev": "tsnd --transpile-only -r tsconfig-paths/register src/index.ts",
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js"
   },
   "author": "",
   "license": "ISC",
