@@ -1,0 +1,23 @@
+# Node.js 22.13.1 베이스 이미지 사용
+FROM node:22.13.1
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# package.json, lock 파일 복사
+COPY package*.json tsconfig.json ./
+
+# 의존성 설치 (devDependencies 포함: 빌드 필요)
+RUN npm install
+
+# 소스 코드 복사
+COPY . .
+
+# TypeScript 빌드
+RUN npm run build
+
+# 포트 노출
+EXPOSE 8001
+
+# 실행 명령어
+CMD ["npm", "run", "start"]
