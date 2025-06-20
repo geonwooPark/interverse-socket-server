@@ -2,7 +2,9 @@ import { Socket } from "socket.io";
 import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 import * as mediasoup from "mediasoup";
 import { Worker, Router } from "mediasoup/node/lib/types";
-import { room } from "..";
+import { RoomManager } from "src/managers/RoomManager";
+
+const roomManager = RoomManager.getInstance();
 
 let worker: Worker;
 let router: Router;
@@ -63,6 +65,8 @@ export const videoHandler = (
 
   // 송신 Transport 생성
   const createSendTransport = async (roomNum: string) => {
+    const gameRoom = roomManager.get(roomNum);
+
     const transport = await router.createWebRtcTransport({
       listenIps: [{ ip: "127.0.0.1", announcedIp: null }], // 공인 IP 추가
       enableUdp: true,
@@ -71,15 +75,18 @@ export const videoHandler = (
     });
 
     // Transport 저장
-    room[roomNum].video.set(socket.id, {
-      transport,
-      producers: [],
+    gameRoom.video.join({
+      userId: socket.id,
+      data: {
+        transport,
+        producers: [],
+      },
     });
 
     // Transport 연결 이벤트
     transport.on("dtlsstatechange", (state) => {
       if (state === "closed") {
-        room[roomNum].video.delete(socket.id);
+        gameRoom.video.leave(socket.id);
       }
     });
 
@@ -93,7 +100,9 @@ export const videoHandler = (
 
   // 송신 Transport 연결
   const connectTransport = async ({ roomNum, dtlsParameters }: any) => {
-    const userData = room[roomNum].video.get(socket.id);
+    const gameRoom = roomManager.get(roomNum);
+
+    const userData = gameRoom.video.getSingleVideo(socket.id);
     if (!userData?.transport) return console.error("❌ Transport not found");
 
     await userData.transport.connect({ dtlsParameters });
@@ -112,13 +121,15 @@ export const videoHandler = (
     rtpCapabilities: any;
     ownerId: string;
   }) => {
+    const gameRoom = roomManager.get(roomNum);
+
     // 방의 모든 수신자(RecvTransport 보유자)에게 Consumer 생성
-    for (const [socketId, userData] of room[roomNum].video) {
+    for (const [socketId, userData] of gameRoom.video.getVideoList()) {
       if (!socketId.endsWith("-recv")) continue;
 
       try {
-        const producer = room[roomNum].video
-          .get(ownerId)
+        const producer = gameRoom.video
+          .getSingleVideo(ownerId)
           ?.producers.find((p) => p.id === producerId);
 
         if (!producer) continue;
@@ -131,7 +142,7 @@ export const videoHandler = (
 
         userData.consumers ||= [];
         userData.consumers.push(consumer);
-        room[roomNum].video.set(socketId, userData);
+        gameRoom.video.join({ userId: socketId, data: userData });
 
         // 해당 소켓에만 Consumer 정보 전송
         io.to(socketId.replace("-recv", "")).emit("serverNewProducer", {
@@ -153,7 +164,9 @@ export const videoHandler = (
     rtpParameters,
     rtpCapabilities,
   }: any) => {
-    const userData = room[roomNum].video.get(socket.id);
+    const gameRoom = roomManager.get(roomNum);
+
+    const userData = gameRoom.video.getSingleVideo(socket.id);
 
     if (!userData || !userData.transport) return;
 
@@ -161,7 +174,7 @@ export const videoHandler = (
 
     userData.producers.push(producer);
 
-    room[roomNum].video.set(socket.id, userData);
+    gameRoom.video.join({ userId: socket.id, data: userData });
 
     socket.emit("serverProduced", { id: producer.id });
 
@@ -175,6 +188,8 @@ export const videoHandler = (
 
   // 수신 트랜스포트 생성
   const createRecvTransport = async (roomNum: string) => {
+    const gameRoom = roomManager.get(roomNum);
+
     const transport = await router.createWebRtcTransport({
       listenIps: [{ ip: "127.0.0.1", announcedIp: null }],
       enableUdp: true,
@@ -182,11 +197,14 @@ export const videoHandler = (
       preferUdp: true,
     });
 
-    room[roomNum].video.set(`${socket.id}-recv`, { transport, consumers: [] });
+    gameRoom.video.join({
+      userId: `${socket.id}-recv`,
+      data: { transport, consumers: [] },
+    });
 
     transport.on("dtlsstatechange", (state) => {
       if (state === "closed") {
-        room[roomNum].video.delete(`${socket.id}-recv`);
+        gameRoom.video.leave(`${socket.id}-recv`);
       }
     });
 
@@ -200,7 +218,9 @@ export const videoHandler = (
 
   // 수신 트랜스포트 연결
   const connectRecvTransport = async ({ roomNum, dtlsParameters }: any) => {
-    const userData = room[roomNum].video.get(`${socket.id}-recv`);
+    const gameRoom = roomManager.get(roomNum);
+
+    const userData = gameRoom.video.getSingleVideo(`${socket.id}-recv`);
 
     if (!userData?.transport) return;
     if (userData.transport.dtlsState !== "new") return;
@@ -220,7 +240,9 @@ export const videoHandler = (
     roomNum: string;
     rtpCapabilities: any;
   }) => {
-    const recvData = room[roomNum].video.get(`${socket.id}-recv`);
+    const gameRoom = roomManager.get(roomNum);
+
+    const recvData = gameRoom.video.getSingleVideo(`${socket.id}-recv`);
 
     if (!recvData?.transport) {
       console.error("RecvTransport not found");
@@ -228,7 +250,7 @@ export const videoHandler = (
     }
 
     // 기존 Producer 수집
-    const producers = Array.from(room[roomNum].video.entries())
+    const producers = Array.from(gameRoom.video.getVideoList().entries())
       .filter(([id]) => !id.endsWith("-recv") && id !== socket.id)
       .flatMap(([, data]) => data.producers || []);
 
@@ -274,7 +296,9 @@ export const videoHandler = (
     roomNum: string;
     consumerId: string;
   }) => {
-    const userData = room[roomNum].video.get(`${socket.id}-recv`);
+    const gameRoom = roomManager.get(roomNum);
+
+    const userData = gameRoom.video.getSingleVideo(`${socket.id}-recv`);
 
     if (!userData) return console.error("❌ RecvTransport not found");
 
@@ -287,29 +311,31 @@ export const videoHandler = (
 
   // 비디오룸 퇴장
   const leaveVideoRoom = (roomNum: string) => {
+    const gameRoom = roomManager.get(roomNum);
+
     // 송신 트랜스포트 정리
-    if (room[roomNum].video.has(socket.id)) {
-      const userData = room[roomNum].video.get(socket.id);
+    if (gameRoom.video.hasVideo(socket.id)) {
+      const userData = gameRoom.video.getSingleVideo(socket.id);
 
       // 모든 Producer 정리
       userData?.producers?.forEach((producer) => producer.close());
 
       // Transport 정리
       userData?.transport?.close();
-      room[roomNum].video.delete(socket.id);
+      gameRoom.video.leave(socket.id);
     }
 
     // 수신 트랜스포트 정리
     const recvKey = `${socket.id}-recv`;
-    if (room[roomNum].video.has(recvKey)) {
-      const recvData = room[roomNum].video.get(recvKey);
+    if (gameRoom.video.hasVideo(recvKey)) {
+      const recvData = gameRoom.video.getSingleVideo(recvKey);
 
       // 모든 Consumer 정리
       recvData?.consumers?.forEach((consumer) => consumer.close());
 
       // Transport 정리
       recvData?.transport?.close();
-      room[roomNum].video.delete(recvKey);
+      gameRoom.video.leave(recvKey);
     }
   };
 

@@ -1,10 +1,12 @@
 import { Socket } from "socket.io";
-import { room } from "..";
 import {
   ClientToServerEvents,
   ServerToClientEvents,
   IJoinRoom,
 } from "@interfaces/index";
+import { RoomManager } from "src/managers/RoomManager";
+
+const roomManager = RoomManager.getInstance();
 
 export const roomHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -13,14 +15,6 @@ export const roomHandler = (
   const socketId = socket.id;
 
   const joinRoom = ({ roomNum, nickname, texture, x, y }: IJoinRoom) => {
-    if (!room[roomNum]) {
-      room[roomNum] = {
-        users: {},
-        video: new Map(),
-        chair: new Set(),
-      };
-    }
-
     const newUser = {
       nickname,
       texture,
@@ -28,7 +22,9 @@ export const roomHandler = (
       y,
     };
 
-    room[roomNum].users[socketId] = newUser;
+    const gameRoom = roomManager.get(roomNum);
+
+    gameRoom.participants.join({ userId: socketId, data: newUser });
 
     // 방에 입장시키기
     socket.join(roomNum);
@@ -45,7 +41,7 @@ export const roomHandler = (
     // 다른 사람들의 정보를 나에게 전송
     io.to(socketId).emit(
       "serverRoomMember",
-      Object.entries(room[roomNum].users).map(([key, value]) => ({
+      Array.from(gameRoom.participants.getUserList()).map(([key, value]) => ({
         ...value,
         socketId: key,
       }))
@@ -57,15 +53,17 @@ export const roomHandler = (
       .emit("serverPlayerInfo", { ...newUser, socketId });
 
     // 누군가 앉아있는 의자들 목록 알려주기
-    if (room[roomNum].chair) {
+    if (gameRoom.chair.get().size > 0) {
       io.to(socketId).emit(
         "serverOccupiedChairs",
-        Array.from(room[roomNum].chair)
+        Array.from(gameRoom.chair.get())
       );
     }
 
     socket.on("disconnect", () => {
-      delete room[roomNum].users[socketId];
+      const gameRoom = roomManager.get(roomNum);
+
+      gameRoom.participants.leave(socketId);
 
       io.to(roomNum).emit("serverLeaveRoom", socketId);
     });

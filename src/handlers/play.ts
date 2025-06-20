@@ -1,10 +1,12 @@
 import { Socket } from "socket.io";
-import { room } from "..";
 import {
   ClientToServerEvents,
   ServerToClientEvents,
   IAvatarPosition,
 } from "@interfaces/index";
+import { RoomManager } from "src/managers/RoomManager";
+
+const roomManager = RoomManager.getInstance();
 
 export const playHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -18,13 +20,15 @@ export const playHandler = (
       socketId,
     });
 
+    const gameRoom = roomManager.get(avatarPosition.roomNum);
+
     if (avatarPosition.isLast) {
-      if (room[avatarPosition.roomNum].users[socketId]) {
-        // 위치 업데이트
-        room[avatarPosition.roomNum].users[socketId].x = avatarPosition.x;
-        room[avatarPosition.roomNum].users[socketId].y = avatarPosition.y;
-        room[avatarPosition.roomNum].users[socketId].texture =
-          avatarPosition.animation;
+      const target = gameRoom.participants.getSingleUser(socketId);
+
+      if (target) {
+        target.x = avatarPosition.x;
+        target.y = avatarPosition.y;
+        target.texture = avatarPosition.animation;
       }
     }
   };

@@ -9,12 +9,7 @@ import { chatHandler } from "@handlers/chat";
 import { playHandler } from "@handlers/play";
 import { dmHandler } from "@handlers/dm";
 import { videoHandler } from "@handlers/video";
-import {
-  ClientToServerEvents,
-  IRoomUser,
-  ServerToClientEvents,
-} from "@interfaces/index";
-import * as mediasoup from "mediasoup";
+import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 
 const app = express();
 
@@ -27,28 +22,12 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
     origin: [
       "http://localhost:5173",
       "http://127.0.0.1:5173",
-      "https://www.interverse.kr",
+      "https://interverse.site",
     ],
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
-
-export const room: Record<
-  string,
-  {
-    users: IRoomUser;
-    video: Map<
-      string,
-      {
-        transport: mediasoup.types.WebRtcTransport;
-        producers?: mediasoup.types.Producer[];
-        consumers?: mediasoup.types.Consumer[];
-      }
-    >;
-    chair: Set<string>;
-  }
-> = {};
 
 io.on(
   "connection",

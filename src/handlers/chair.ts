@@ -4,24 +4,28 @@ import {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "@interfaces/index";
-import { room } from "..";
+import { RoomManager } from "src/managers/RoomManager";
+
+const roomManager = RoomManager.getInstance();
 
 export const chairHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
   io: any
 ) => {
   const sendChairId = ({ roomNum, chairId }: IChair) => {
-    if (room[roomNum].chair.has(chairId)) {
-      room[roomNum].chair.delete(chairId);
+    const gameRoom = roomManager.get(roomNum);
+
+    if (gameRoom.chair.get().has(chairId)) {
+      gameRoom.chair.leave(chairId);
     } else {
-      room[roomNum].chair.add(chairId);
+      gameRoom.chair.sit(chairId);
     }
 
     socket.broadcast.to(roomNum).emit("serverChairId", chairId);
 
     socket.on("disconnect", () => {
-      if (room[roomNum].chair.has(chairId)) {
-        room[roomNum].chair.delete(chairId);
+      if (gameRoom.chair.get().has(chairId)) {
+        gameRoom.chair.leave(chairId);
 
         io.to(roomNum).emit("serverChairId", chairId);
       }
