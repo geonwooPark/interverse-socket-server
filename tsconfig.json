@@ -14,7 +14,8 @@
     "baseUrl": ".",
     "paths": {
       "@handlers/*": ["src/handlers/*"],
-      "@interfaces/*": ["src/interfaces/*"]
+      "@interfaces/*": ["src/interfaces/*"],
+      "@managers/*": ["src/managers/*"]
     }
   }
 }

@@ -2,7 +2,7 @@ import { Socket } from "socket.io";
 import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 import * as mediasoup from "mediasoup";
 import { Worker, Router } from "mediasoup/node/lib/types";
-import { RoomManager } from "src/managers/RoomManager";
+import { RoomManager } from "@managers/RoomManager";
 
 const roomManager = RoomManager.getInstance();
 

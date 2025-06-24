@@ -7,6 +7,7 @@ const isProd = process.env.NODE_ENV === "production";
 const baseDir = isProd ? path.resolve(__dirname, "..") : __dirname;
 
 addAliases({
-  "@handlers": path.join(baseDir, "handlers"),
-  "@interfaces": path.join(baseDir, "interfaces"),
+  "@handlers": path.join(__dirname, "handlers"),
+  "@interfaces": path.join(__dirname, "interfaces"),
+  "@managers": path.join(__dirname, "managers"),
 });

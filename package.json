@@ -27,6 +27,7 @@
   },
   "_moduleAliases": {
     "@handlers": "dist/handlers",
-    "@interfaces": "dist/interfaces"
+    "@interfaces": "dist/interfaces",
+    "@managers": "dist/managers"
   }
 }

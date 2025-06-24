@@ -4,7 +4,7 @@ import {
   ServerToClientEvents,
   IJoinRoom,
 } from "@interfaces/index";
-import { RoomManager } from "src/managers/RoomManager";
+import { RoomManager } from "@managers/RoomManager";
 
 const roomManager = RoomManager.getInstance();
 
