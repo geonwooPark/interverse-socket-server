@@ -1,8 +1,6 @@
 import "./module-alias";
-import express from "express";
-import http from "http";
+import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import cors from "cors";
 import { roomHandler } from "@handlers/room";
 import { chairHandler } from "@handlers/chair";
 import { chatHandler } from "@handlers/chat";
@@ -11,11 +9,9 @@ import { dmHandler } from "@handlers/dm";
 import { videoHandler } from "@handlers/video";
 import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 
-const app = express();
+console.log("NODE_ENV =", process.env.NODE_ENV);
 
-app.use(cors());
-
-const server = http.createServer(app);
+const server = createServer();
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   cors: {
@@ -45,6 +41,6 @@ io.on(
   }
 );
 
-server.listen(8001, () => {
+server.listen(process.env.PORT || 8001, () => {
   console.log("서버 실행중...");
 });
