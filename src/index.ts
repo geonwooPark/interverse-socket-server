@@ -21,7 +21,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "http://127.0.0.1:5173",
+      "https://alpha.interverse.site",
       "https://interverse.site",
     ],
     methods: ["GET", "POST"],
