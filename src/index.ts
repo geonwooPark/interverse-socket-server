@@ -32,7 +32,7 @@ io.on(
     videoHandler(socket, io);
 
     socket.on("disconnecting", () => {
-      console.log("유저 연결 끊김..");
+      console.log("유저 연결 끊김...");
     });
   }
 );
