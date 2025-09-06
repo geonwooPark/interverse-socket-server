@@ -1,3 +1,4 @@
+import "./config/env";
 import "./module-alias";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
