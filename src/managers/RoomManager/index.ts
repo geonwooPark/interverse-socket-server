@@ -23,4 +23,14 @@ export class RoomManager {
   public delete(roomId: string) {
     this.rooms.delete(roomId);
   }
+
+  public findRoomsBySocketId(socketId: string): Room[] {
+    const rooms: Room[] = [];
+    for (const [roomId, room] of this.rooms) {
+      if (room.participants.hasUser(socketId)) {
+        rooms.push(room);
+      }
+    }
+    return rooms;
+  }
 }

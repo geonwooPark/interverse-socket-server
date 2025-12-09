@@ -3,7 +3,6 @@ export interface IRoom {
   role: "host" | "guest";
   title: string;
   createAt: number;
-  headCount?: number;
 }
 
 export interface IRoomUser {
@@ -46,7 +45,6 @@ export interface IJoinRoom {
   texture: string;
   x: number;
   y: number;
-  headCount?: number;
 }
 
 export interface IAvatarPosition {
@@ -113,7 +111,16 @@ export interface ServerToClientEvents {
     kind: "audio" | "video";
     rtpParameters: any;
   }) => void;
-  serverExceedHeadCount: ({ message }: { message: string }) => void;
+  serverRoomParticipantCount: ({
+    roomId,
+    participantCount,
+  }: {
+    roomId: string;
+    participantCount: number;
+  }) => void;
+  serverRoomParticipantCounts: (
+    counts: Array<{ roomId: string; participantCount: number }>
+  ) => void;
 }
 
 export interface ClientToServerEvents {
@@ -165,4 +172,5 @@ export interface ClientToServerEvents {
     roomNum: string;
     consumerId: string;
   }) => void;
+  clientRequestRoomParticipantCounts: (roomIds: string[]) => void;
 }

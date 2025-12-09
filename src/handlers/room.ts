@@ -14,6 +14,18 @@ export const roomHandler = (
 ) => {
   const socketId = socket.id;
 
+  const broadcastParticipantCount = (
+    io: any,
+    roomNum: string,
+    gameRoom: ReturnType<typeof roomManager.get>
+  ) => {
+    const participantCount = gameRoom.participants.getUserList().size;
+    io.emit("serverRoomParticipantCount", {
+      roomId: roomNum,
+      participantCount,
+    });
+  };
+
   const joinRoom = ({ roomNum, nickname, texture, x, y }: IJoinRoom) => {
     const newUser = {
       nickname,
@@ -60,14 +72,40 @@ export const roomHandler = (
       );
     }
 
-    socket.on("disconnect", () => {
-      const gameRoom = roomManager.get(roomNum);
+    // 참여자 수 브로드캐스트 (모든 클라이언트에게)
+    broadcastParticipantCount(io, roomNum, gameRoom);
+  };
 
+  // disconnect 이벤트를 roomHandler 레벨에서 처리
+  socket.on("disconnect", () => {
+    const rooms = roomManager.findRoomsBySocketId(socketId);
+
+    // 모든 참여 중인 방에서 나가기
+    rooms.forEach((gameRoom) => {
       gameRoom.participants.leave(socketId);
 
-      io.to(roomNum).emit("serverLeaveRoom", socketId);
+      io.to(gameRoom.roomId).emit("serverLeaveRoom", socketId);
+
+      // 참여자 수 브로드캐스트 (퇴장 후)
+      broadcastParticipantCount(io, gameRoom.roomId, gameRoom);
     });
+  });
+
+  // 방 목록의 참여자 수 요청 처리
+  const requestRoomParticipantCounts = (roomIds: string[]) => {
+    const counts = roomIds.map((roomId) => {
+      const gameRoom = roomManager.get(roomId);
+      const participantCount = gameRoom.participants.getUserList().size;
+      return {
+        roomId,
+        participantCount,
+      };
+    });
+
+    // 요청한 클라이언트에게만 전송
+    socket.emit("serverRoomParticipantCounts", counts);
   };
 
   socket.on("clientJoinRoom", joinRoom);
+  socket.on("clientRequestRoomParticipantCounts", requestRoomParticipantCounts);
 };
