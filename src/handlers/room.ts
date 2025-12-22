@@ -101,11 +101,7 @@ export const roomHandler = (
         participantCount,
       };
     });
-
-    // 요청한 클라이언트에게만 전송
-    socket.emit("serverRoomParticipantCounts", counts);
   };
 
   socket.on("clientJoinRoom", joinRoom);
-  socket.on("clientRequestRoomParticipantCounts", requestRoomParticipantCounts);
 };
