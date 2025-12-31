@@ -63,6 +63,21 @@ export interface IChair {
   chairId: string;
 }
 
+export interface IWhiteboardDraw {
+  x: number;
+  y: number;
+  prevX: number;
+  prevY: number;
+  color: string;
+  lineWidth: number;
+  type: "draw" | "clear";
+}
+
+export interface IWhiteboardAction {
+  roomNum: string;
+  draw: IWhiteboardDraw;
+}
+
 export interface IVideoRoomUser {
   [socketId: string]: {
     nickname: string;
@@ -114,6 +129,7 @@ export interface ServerToClientEvents {
     rtpParameters: any;
   }) => void;
   serverExceedHeadCount: ({ message }: { message: string }) => void;
+  serverWhiteboardDraw: (draw: IWhiteboardDraw) => void;
 }
 
 export interface ClientToServerEvents {
@@ -165,4 +181,5 @@ export interface ClientToServerEvents {
     roomNum: string;
     consumerId: string;
   }) => void;
+  clientWhiteboardDraw: (action: IWhiteboardAction) => void;
 }
