@@ -8,6 +8,7 @@ import { chatHandler } from "@handlers/chat";
 import { playHandler } from "@handlers/play";
 import { dmHandler } from "@handlers/dm";
 import { videoHandler } from "@handlers/video";
+import { whiteboardHandler } from "@handlers/whiteboard";
 import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 
 console.log("NODE_ENV =", process.env.NODE_ENV);
@@ -31,6 +32,7 @@ io.on(
     chairHandler(socket, io);
     dmHandler(socket, io);
     videoHandler(socket, io);
+    whiteboardHandler(socket, io);
 
     socket.on("disconnecting", () => {
       console.log("유저 연결 끊김...");
