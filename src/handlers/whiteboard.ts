@@ -1,15 +1,12 @@
 import { Socket } from "socket.io";
-import {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from "@interfaces/index";
+import { ClientToServerEvents, ServerToClientEvents } from "@interfaces/index";
 import { RoomManager } from "@managers/RoomManager";
 
 const roomManager = RoomManager.getInstance();
 
 export const whiteboardHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
-  io: any
+  io: any,
 ) => {
   // 화이트보드 그리기 데이터 전송
   const sendWhiteboardDraw = ({
@@ -33,6 +30,11 @@ export const whiteboardHandler = (
 
     // 다른 클라이언트에게 브로드캐스트
     socket.broadcast.to(roomNum).emit("serverWhiteboardDraw", draw);
+
+    // Redis에 실시간 상태 저장
+    roomManager
+      .persistRoom(roomNum)
+      .catch((e) => console.error("[whiteboardHandler] persistRoom error", e));
   };
 
   // 화이트보드 클리어 전송
@@ -43,6 +45,11 @@ export const whiteboardHandler = (
 
     // 다른 클라이언트에게 브로드캐스트
     socket.broadcast.to(roomNum).emit("serverWhiteboardClear");
+
+    // Redis에 실시간 상태 저장
+    roomManager
+      .persistRoom(roomNum)
+      .catch((e) => console.error("[whiteboardHandler] persistRoom error", e));
   };
 
   // 저장된 화이트보드 데이터 요청
@@ -56,4 +63,3 @@ export const whiteboardHandler = (
   socket.on("clientWhiteboardClear", sendWhiteboardClear);
   socket.on("clientRequestWhiteboardData", requestWhiteboardData);
 };
-

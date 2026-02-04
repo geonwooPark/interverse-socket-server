@@ -10,7 +10,7 @@ const roomManager = RoomManager.getInstance();
 
 export const playHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
-  io: any
+  io: any,
 ) => {
   const socketId = socket.id;
 
@@ -29,6 +29,10 @@ export const playHandler = (
         target.x = avatarPosition.x;
         target.y = avatarPosition.y;
         target.texture = avatarPosition.animation;
+        // Redis에 실시간 상태 저장 (위치/텍스처)
+        roomManager
+          .persistRoom(avatarPosition.roomNum!)
+          .catch((e) => console.error("[playHandler] persistRoom error", e));
       }
     }
   };

@@ -15,7 +15,10 @@
     "paths": {
       "@handlers/*": ["src/handlers/*"],
       "@interfaces/*": ["src/interfaces/*"],
-      "@managers/*": ["src/managers/*"]
+      "@managers/*": ["src/managers/*"],
+      "@repositories/*": ["src/repositories/*"],
+      "@config/*": ["src/config/*"],
+      "@db/*": ["src/db/*"]
     }
   }
 }

@@ -10,4 +10,7 @@ addAliases({
   "@handlers": path.join(__dirname, "handlers"),
   "@interfaces": path.join(__dirname, "interfaces"),
   "@managers": path.join(__dirname, "managers"),
+  "@repositories": path.join(__dirname, "repositories"),
+  "@config": path.join(__dirname, "config"),
+  "@db": path.join(__dirname, "db"),
 });

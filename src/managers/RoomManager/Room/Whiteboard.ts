@@ -26,4 +26,9 @@ export class Whiteboard {
   clear() {
     this.draws = [];
   }
+
+  /** Redis 등 외부 저장소에서 복원할 때 사용 */
+  setDraws(draws: IWhiteboardDraw[]) {
+    this.draws = [...draws];
+  }
 }

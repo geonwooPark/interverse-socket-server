@@ -10,14 +10,14 @@ const roomManager = RoomManager.getInstance();
 
 export const roomHandler = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
-  io: any
+  io: any,
 ) => {
   const socketId = socket.id;
 
   const broadcastParticipantCount = (
     io: any,
     roomNum: string,
-    gameRoom: ReturnType<typeof roomManager.get>
+    gameRoom: ReturnType<typeof roomManager.get>,
   ) => {
     const participantCount = gameRoom.participants.getUserList().size;
     io.emit("serverRoomParticipantCount", {
@@ -26,7 +26,7 @@ export const roomHandler = (
     });
   };
 
-  const joinRoom = ({ roomNum, nickname, texture, x, y }: IJoinRoom) => {
+  const joinRoom = async ({ roomNum, nickname, texture, x, y }: IJoinRoom) => {
     const newUser = {
       nickname,
       texture,
@@ -34,7 +34,7 @@ export const roomHandler = (
       y,
     };
 
-    const gameRoom = roomManager.get(roomNum);
+    const gameRoom = await roomManager.getAsync(roomNum);
 
     gameRoom.participants.join({ userId: socketId, data: newUser });
 
@@ -56,7 +56,7 @@ export const roomHandler = (
       Array.from(gameRoom.participants.getUserList()).map(([key, value]) => ({
         ...value,
         socketId: key,
-      }))
+      })),
     );
 
     // 나의 정보를 나를 제외한 모두에게 전송
@@ -68,12 +68,17 @@ export const roomHandler = (
     if (gameRoom.chair.get().size > 0) {
       io.to(socketId).emit(
         "serverOccupiedChairs",
-        Array.from(gameRoom.chair.get())
+        Array.from(gameRoom.chair.get()),
       );
     }
 
     // 참여자 수 브로드캐스트 (모든 클라이언트에게)
     broadcastParticipantCount(io, roomNum, gameRoom);
+
+    // Redis에 실시간 상태 저장
+    roomManager
+      .persistRoom(roomNum)
+      .catch((e) => console.error("[roomHandler] persistRoom error", e));
   };
 
   // disconnect 이벤트를 roomHandler 레벨에서 처리
@@ -88,6 +93,11 @@ export const roomHandler = (
 
       // 참여자 수 브로드캐스트 (퇴장 후)
       broadcastParticipantCount(io, gameRoom.roomId, gameRoom);
+
+      // Redis에 실시간 상태 저장
+      roomManager
+        .persistRoom(gameRoom.roomId)
+        .catch((e) => console.error("[roomHandler] persistRoom error", e));
     });
   });
 
