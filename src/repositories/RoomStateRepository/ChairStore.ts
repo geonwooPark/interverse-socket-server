@@ -21,8 +21,9 @@ export class RoomChairStore {
 
   async load(roomId: string): Promise<string[]> {
     try {
-      const json = await this.client.get(KEY(roomId));
-      return json ? (JSON.parse(json) as string[]) : [];
+      const members = await this.client.smembers(KEY(roomId));
+
+      return members;
     } catch (e) {
       console.error("[RoomChairStore] load error", e);
       return [];
@@ -30,7 +31,15 @@ export class RoomChairStore {
   }
 
   async save(roomId: string, chairIds: Set<string>): Promise<void> {
-    await this.client.set(KEY(roomId), JSON.stringify(Array.from(chairIds)));
+    const key = KEY(roomId);
+
+    await this.client.del(key);
+
+    const ids = Array.from(chairIds);
+
+    if (ids.length > 0) {
+      await this.client.sadd(key, ...ids);
+    }
   }
 
   async delete(roomId: string): Promise<void> {
