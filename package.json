@@ -6,8 +6,8 @@
     "build:alpha": "cross-env NODE_ENV=alpha tsc",
     "build:prod": "cross-env NODE_ENV=production tsc",
     "start:dev": "cross-env NODE_ENV=development tsnd --transpile-only -r tsconfig-paths/register src/index.ts",
-    "start:alpha": "npm run build:alpha && cross-env NODE_ENV=alpha node dist/index.js",
-    "start:prod": "npm run build:prod && cross-env NODE_ENV=production node dist/index.js"
+    "start:alpha": "pnpm run build:alpha && cross-env NODE_ENV=alpha node dist/index.js",
+    "start:prod": "pnpm run build:prod && cross-env NODE_ENV=production node dist/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -35,5 +35,10 @@
     "@repositories": "dist/repositories",
     "@config": "dist/config",
     "@db": "dist/db"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "mediasoup"
+    ]
   }
 }
